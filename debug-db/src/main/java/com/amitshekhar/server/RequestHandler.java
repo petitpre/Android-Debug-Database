@@ -49,15 +49,17 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by amitshekhar on 06/02/17.
  */
-
 public class RequestHandler {
 
     private final Context mContext;
@@ -219,17 +221,29 @@ public class RequestHandler {
     }
 
     private String getAllDataFromTheTableResponse(String route) {
-
         String tableName = null;
+        int page = 0;
+        int limit = 100;
 
-        if (route.contains("?tableName=")) {
-            tableName = route.substring(route.indexOf("=") + 1, route.length());
+        try {
+            Map<String, String> params = splitQuery(route);
+            if (params.containsKey("tableName")) {
+                tableName = params.get("tableName");
+            }
+            if (params.containsKey("page")) {
+                page = Integer.parseInt(params.get("page"));
+            }
+            if (params.containsKey("limit")) {
+                limit = Integer.parseInt(params.get("limit"));
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
 
         TableDataResponse response;
 
         if (isDbOpened) {
-            String sql = "SELECT * FROM " + tableName;
+            String sql = "SELECT * FROM " + tableName + "LIMIT " + limit + " OFFSET " + (page * limit);
             response = DatabaseHelper.getTableData(sqLiteDB, sql, tableName);
         } else {
             response = PrefHelper.getAllPrefData(mContext, tableName);
@@ -243,6 +257,7 @@ public class RequestHandler {
         String query = null;
         String data = null;
         String first;
+
         try {
             if (route.contains("?query=")) {
                 query = route.substring(route.indexOf("=") + 1, route.length());
@@ -374,6 +389,17 @@ public class RequestHandler {
             response.isSuccessful = false;
             return mGson.toJson(response);
         }
+    }
+
+    public static Map<String, String> splitQuery(String path) throws UnsupportedEncodingException {
+        Map<String, String> query_pairs = new LinkedHashMap<>();
+        String query = path.substring(path.indexOf('?') + 1);
+        String[] pairs = query.split("&");
+        for (String pair : pairs) {
+            int idx = pair.indexOf("=");
+            query_pairs.put(URLDecoder.decode(pair.substring(0, idx), "UTF-8"), URLDecoder.decode(pair.substring(idx + 1), "UTF-8"));
+        }
+        return query_pairs;
     }
 
 }
