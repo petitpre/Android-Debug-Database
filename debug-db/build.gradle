@@ -52,5 +52,5 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'net.zetetic:android-database-sqlcipher:3.5.7@aar'
-    implementation "android.arch.persistence.room:runtime:1.1.1"
+    implementation "androidx.room:room-runtime:2.1.0-beta01"
 }
